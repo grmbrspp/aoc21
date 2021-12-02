@@ -1,4 +1,5 @@
 test*
+env
 new_day.py
 template.py
 runall.sh
