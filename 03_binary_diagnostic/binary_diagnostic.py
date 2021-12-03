@@ -4,9 +4,6 @@ begin = time.time()
 
 ###
 
-with open("input.txt") as file:
-	report = [line.strip() for line in file]
-
 def most_common_val(arr: list, col_idx: int) -> int:
 	col = [line[col_idx] for line in arr]
 	avg = sum(col)/len(arr)
@@ -16,12 +13,15 @@ def bin_array_to_int(arr: list) -> int:
 	bin_str = "".join([str(elem) for elem in arr])
 	return int(bin_str, 2)
 
-bin_report = [[int(char) for char in line] for line in report]
-h_size = len(bin_report[0])
-gamma = [most_common_val(bin_report, i) for i in range(h_size)]
+
+with open("input.txt") as file:
+	report = [[int(char) for char in line.strip()] for line in file]
+
+h_size = len(report[0])
+gamma = [most_common_val(report, i) for i in range(h_size)]
 epsilon = [0 if dig else 1 for dig in gamma]
 
-oxygen = co2 = bin_report
+oxygen = co2 = report
 for i in range(h_size):
 	oxygen = [line for line in oxygen if line[i] == most_common_val(oxygen, i)]
 	co2 = [line for line in co2 if line[i] != most_common_val(co2, i)] if len(co2) > 1 else co2
