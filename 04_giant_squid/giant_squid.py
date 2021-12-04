@@ -6,13 +6,13 @@ begin = time.time()
 
 def is_solved(rows: list, drawn_nums: set) -> bool:
 	for row in rows:
-			if all(n in drawn_nums for n in row):
-				return True
+		if all(n in drawn_nums for n in row):
+			return True
 	return False
 
-def get_score(bingo_board: list, drawn_nums: list) -> int:
+def get_score(bingo_board: list, drawn_nums: set, last_draw: int) -> int:
 	unmarked_numbers = [n for n in bingo_board if n not in drawn_nums]
-	return sum(unmarked_numbers) * drawn_nums[-1]
+	return sum(unmarked_numbers) * last_draw
 
 
 with open("input.txt") as file:
@@ -26,23 +26,17 @@ for b_idx, board in enumerate(boards):
 	board_cols = [board[i::5] for i in range(5)]
 	rows_and_cols[b_idx] = board_rows + board_cols
 
-drawn, solved = set(), {}
+drawn, solved = set(), set()
+scores = []
 for d_idx, draw in enumerate(draws):
 	drawn.add(draw)
 	for b_idx, board in enumerate(boards):
 		if b_idx not in solved and is_solved(rows_and_cols[b_idx], drawn):
-			solved[b_idx] = d_idx
+			solved.add(b_idx)
+			scores.append(get_score(board, drawn, draw))
 
-ranking = sorted(solved.items(), key=lambda kvp: kvp[1])
-
-winner_idx, winner_draw_idx = ranking[0]
-winner_score = get_score(boards[winner_idx], draws[:winner_draw_idx+1])
-
-looser_idx, looser_draw_idx = ranking[-1]
-looser_score = get_score(boards[looser_idx], draws[:looser_draw_idx+1])
-
-print(f"Part 1: {winner_score}")
-print(f"Part 2: {looser_score}")
+print(f"Part 1: {scores[0]}")
+print(f"Part 2: {scores[-1]}")
 
 ###
 
