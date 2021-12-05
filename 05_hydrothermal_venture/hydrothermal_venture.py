@@ -4,25 +4,23 @@ begin = time.time()
 
 ###
 
-def get_step_size(n: int, m: int) -> int:
-	if n == m:
+def get_step_size(i: int, j: int) -> int:
+	if i == j:
 		return 0
-	return 1 if n < m else -1
+	return 1 if i < j else -1
 
 def get_points_between(a: tuple, b: tuple, diagonals: bool) -> list:
 	result = []
-	ax, ay, bx, by = *a, *b
-	if not any([diagonals, ax == bx, ay == by]):
+	x_step, y_step = get_step_size(a[0], b[0]), get_step_size(a[1], b[1])
+
+	if not any([diagonals, x_step == 0, y_step == 0]):
 		return result
 
-	x_step, y_step = get_step_size(ax, bx), get_step_size(ay, by)
-	p = (ax, ay)
+	result.append(a)
+	while a != b:
+		a = (a[0] + x_step, a[1] + y_step)
+		result.append(a)
 
-	while p != b:
-		result.append(p)
-		p = (p[0] + x_step, p[1] + y_step)
-
-	result.append(p)
 	return result
 
 def get_vent_map(lines: list, diagonals: bool) -> dict:
@@ -40,7 +38,7 @@ with open("input.txt") as file:
 		points = [(int(x), int(y)) for x, y in points]
 		vent_lines.append(points)
 
-overlaps = lambda vmap: sum(True for val in vmap.values() if val > 1)
+overlaps = lambda vmap: sum(val > 1 for val in vmap.values())
 
 vent_map_p1 = get_vent_map(vent_lines, False)
 vent_map_p2 = get_vent_map(vent_lines, True)
