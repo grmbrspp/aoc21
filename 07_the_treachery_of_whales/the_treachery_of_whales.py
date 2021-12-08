@@ -1,4 +1,5 @@
 import time
+import statistics
 
 begin = time.time()
 
@@ -28,10 +29,9 @@ def get_min_dist_mean(points: list, p: int, constant_rate: bool) -> int:
 with open("input.txt") as file:
 	crab_positions = [int(n) for n in file.read().strip().split(",")]
 
-starting_point = round(sum(crab_positions)/len(crab_positions))
-
-p1_mean = get_min_dist_mean(crab_positions, starting_point, True)
-p2_mean = get_min_dist_mean(crab_positions, starting_point, False)
+p1_mean = round(statistics.median(crab_positions))
+start_point = statistics.mean(crab_positions)
+p2_mean = get_min_dist_mean(crab_positions, start_point, False)
 
 print(f"Part 1: {get_dist(crab_positions, p1_mean, True)}")
 print(f"Part 2 {get_dist(crab_positions, p2_mean, False)}")
