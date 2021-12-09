@@ -16,7 +16,8 @@ def get_basin(low_point: tuple) -> set:
 	edge = [low_point]
 	while edge:
 		basin.update(edge)
-		edge = [q for p in edge for q in ADJACENCIES[p] if q not in basin and HEIGHTMAP[q] < 9]
+		edge = [q for p in edge for q in ADJACENCIES[p]
+				if q not in basin and HEIGHTMAP[q] < 9]
 	return basin
 
 
@@ -28,8 +29,8 @@ with open("input.txt") as file:
 
 adj_mask = [(0,1), (0,-1), (1,0), (-1,0)]
 ADJACENCIES = {
-	p:
-	[tuple_sum(p,q) for q in adj_mask if tuple_sum(p,q) in HEIGHTMAP]
+	p: [tuple_sum(p,q) for q in adj_mask
+		if tuple_sum(p,q) in HEIGHTMAP]
 	for p in HEIGHTMAP
 }
 
