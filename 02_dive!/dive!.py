@@ -24,4 +24,5 @@ print(f"Part 2: {h * d2}")
 ###
 
 end = time.time()
-print(f"Runtime: {end - begin}")
+runtime_in_ms = round((end - begin)*1000, 3)
+print(f"Runtime: {runtime_in_ms:.3f} ms")

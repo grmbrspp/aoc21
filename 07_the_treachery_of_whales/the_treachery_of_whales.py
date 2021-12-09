@@ -39,4 +39,5 @@ print(f"Part 2 {get_dist(crab_positions, p2_mean, False)}")
 ###
 
 end = time.time()
-print(f"Runtime: {end - begin}")
+runtime_in_ms = round((end - begin)*1000, 3)
+print(f"Runtime: {runtime_in_ms:.3f} ms")
