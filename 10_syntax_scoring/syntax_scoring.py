@@ -25,8 +25,7 @@ def get_autocomplete_score(completion: str) -> int:
 	score = 0
 	score_table = {")": 1, "]": 2, "}": 3, ">": 4}
 	for char in completion:
-		score *= 5
-		score += score_table[char]
+		score = 5 * score + score_table[char]
 	return score
 
 
@@ -39,7 +38,7 @@ incomplete_lines = [state for state in line_states if state[0] == "incomplete"]
 syntax_scores = [get_syntax_score(state[1]) for state in corrupted_lines]
 autocomplete_scores = [get_autocomplete_score(state[1]) for state in incomplete_lines]
 autocomplete_scores.sort()
-winner_index = (len(autocomplete_scores) - 1)//2
+winner_index = len(autocomplete_scores)//2
 
 print(f"Part 1: {sum(syntax_scores)}")
 print(f"Part 2: {autocomplete_scores[winner_index]}")
