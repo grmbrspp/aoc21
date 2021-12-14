@@ -1,35 +1,26 @@
 import time
-from collections import Counter, deque
+from collections import Counter
 
 begin = time.time()
 
 ###
 
-def pair_count_after_n_steps(n: int):
+def element_count_after_n_steps(n: int) -> list:
 	pair_counter = Counter({
 		pair: TEMPLATE.count(pair)
 		for pair in INSERTION_RULES
+		if pair in TEMPLATE
 	})
+	element_counter = Counter(TEMPLATE)
 	for _ in range(n):
 		for pair, count in list(pair_counter.items()):
 			elem_a, elem_b = list(pair)
 			new_elem = INSERTION_RULES[elem_a+elem_b]
+			element_counter[new_elem] += count
 			pair_counter[elem_a+new_elem] += count
 			pair_counter[new_elem+elem_b] += count
 			pair_counter[pair] -= count
-	return pair_counter.items()
-
-def element_count_after_n_steps(n: int) -> list:
-	pair_counter = pair_count_after_n_steps(n)
-	element_counter = Counter({
-		TEMPLATE[0]: 1,
-		TEMPLATE[-1]: 1
-	})
-	for pair, count in pair_counter:
-		elem_a, elem_b = list(pair)
-		element_counter[elem_a] += count
-		element_counter[elem_b] += count
-	return [(elem, count//2) for elem, count in element_counter.most_common()]
+	return element_counter.most_common()
 
 
 TEMPLATE = ""
