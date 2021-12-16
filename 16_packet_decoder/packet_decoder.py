@@ -33,7 +33,7 @@ def product(iteralbe) -> int:
 		acc *= n
 	return acc
 
-def read_literal(bin_str: str) -> int:
+def read_literal(bin_str: str) -> tuple:
 	bin_number = ""
 	i = 0
 	while True:
