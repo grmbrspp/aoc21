@@ -5,6 +5,7 @@ begin = time.time()
 
 ###
 
+Packet = namedtuple("Packet", ["version", "type", "sub_count", "value"])
 HEX_TO_BIN = {
 	"0": "0000",
 	"1": "0001",
@@ -24,16 +25,13 @@ HEX_TO_BIN = {
 	"F": "1111",
 }
 
-Packet = namedtuple("Packet", ["version", "type", "sub_count", "value"])
-
-
 def product(iteralbe) -> int:
 	acc = 1
 	for n in iteralbe:
 		acc *= n
 	return acc
 
-def read_literal(bin_str: str) -> tuple:
+def read_literal_packet(bin_str: str) -> tuple:
 	bin_number = ""
 	i = 0
 	while True:
@@ -50,17 +48,17 @@ def read_packets(bin_str: str) -> list:
 	version = int(bin_str[:3], 2)
 	type_id = int(bin_str[3:6], 2)
 	match type_id, bin_str[6] == "0":
-		case 4,_:
-			value, remainder = read_literal(bin_str[6:])
+		case 4, _:
+			value, remainder = read_literal_packet(bin_str[6:])
 			result.append(Packet(version, type_id, 0, value))
-		case _,True:
+		case _, True:
 			length = int(bin_str[7:7+15], 2)
 			sub_packets = read_packets(bin_str[7+15:7+15+length])
 			sub_count = len(sub_packets) - sum(p.sub_count for p in sub_packets)
 			result.append(Packet(version, type_id, sub_count, 0))
 			result.extend(sub_packets)
 			remainder = bin_str[7+15+length:]
-		case _,False:
+		case _, False:
 			length = int(bin_str[7:7+11], 2)
 			result.append(Packet(version, type_id, length, 0))
 			remainder = bin_str[7+11:]
@@ -91,16 +89,11 @@ def evaluate_next_packet(packets: list) -> int:
 with open("input.txt") as file:
 	input_hex = file.read().strip()
 
-input_bin = ""
-for hex_digit in input_hex:
-	input_bin += HEX_TO_BIN[hex_digit]
-
+input_bin = "".join(HEX_TO_BIN[hex_digit] for hex_digit in input_hex)
 packet_list = read_packets(input_bin)
 
 print(f"Part 1: {sum(p.version for p in packet_list)}")
 print(f"Part 2: {evaluate_next_packet(packet_list)}")
-
-
 
 ###
 
