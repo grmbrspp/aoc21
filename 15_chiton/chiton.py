@@ -1,5 +1,6 @@
 import time
 import heapq
+from collections import defaultdict
 
 begin = time.time()
 
@@ -30,17 +31,25 @@ def dijkstra(start: tuple, finish: tuple, risk_map: dict) -> int:
 	queue = []
 	heapq.heappush(queue, (0, start))
 	visited = set()
+	min_risk_to_reach_point = defaultdict(lambda: float('inf'))
+	min_risk_to_reach_point[start] = 0
 	while queue:
-		dist, point = heapq.heappop(queue)
+		risk, point = heapq.heappop(queue)
 		if point == finish:
-			return dist
+			return risk
 		if point in visited:
 			continue
 		visited.add(point)
 		for neighbour in get_neighbours(point):
-			neighbour_risk = risk_map.get(neighbour, -1)
-			if neighbour_risk > 0:
-				heapq.heappush(queue, (dist + neighbour_risk, neighbour))
+			if neighbour in visited:
+				continue
+			if neighbour not in risk_map:
+				continue
+			neighbour_risk = risk + risk_map[neighbour]
+			if neighbour_risk < min_risk_to_reach_point[neighbour]:
+				min_risk_to_reach_point[neighbour] = neighbour_risk
+				heapq.heappush(queue, (neighbour_risk, neighbour))
+	return float('inf')
 
 
 risk_map_p1 = {}
