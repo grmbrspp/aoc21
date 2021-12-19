@@ -5,12 +5,10 @@ begin = time.time()
 
 ###
 
-NON_NUMERIC_CHARS = {"[", "]", ","}
-
 def add_n_to_next_regular_number(n: int, sfn: list, idx_generator) -> None:
 	for idx in idx_generator:
-		if sfn[idx] not in NON_NUMERIC_CHARS:
-			sfn[idx] = str(n + int(sfn[idx]))
+		if isinstance(sfn[idx], int):
+			sfn[idx] = n + sfn[idx]
 			return
 
 def explode(sfn: list) -> bool:
@@ -21,9 +19,9 @@ def explode(sfn: list) -> bool:
 		if char == "]":
 			depth -= 1
 		if depth > 4:
-			add_n_to_next_regular_number(int(sfn[idx+1]), sfn, range(idx,-1,-1))
-			add_n_to_next_regular_number(int(sfn[idx+3]), sfn, range(idx+5,len(sfn)))
-			sfn[idx] = "0"
+			add_n_to_next_regular_number(sfn[idx+1], sfn, range(idx,-1,-1))
+			add_n_to_next_regular_number(sfn[idx+3], sfn, range(idx+5,len(sfn)))
+			sfn[idx] = 0
 			for _ in range(4):
 				sfn.pop(idx+1)
 			return True
@@ -31,9 +29,9 @@ def explode(sfn: list) -> bool:
 
 def split(sfn: list) -> bool:
 	for idx, char in enumerate(sfn):
-		if char not in ["[","]",","] and int(char) > 9:
+		if isinstance(char, int) and char > 9:
 			n = int(char)
-			pair = ["[", str(int(n/2)), "," , str(int(n/2) + int(n%2 > 0)), "]"]
+			pair = ["[", n//2, "," , n//2 + int(n%2 > 0), "]"]
 			sfn.pop(idx)
 			for new_char in reversed(pair):
 				sfn.insert(idx, new_char)
@@ -69,23 +67,32 @@ def get_magnitude(sfn_str: str) -> int:
 
 def get_total_sum(sfns: list) -> list:
 	acc = None
-	for snailfish_number in sfns:
+	for sfn in sfns:
 		if not acc:
-			acc = snailfish_number
+			acc = sfn
 			continue
-		acc = add_sfns(acc, snailfish_number)
+		acc = add_sfns(acc, sfn)
 		acc = reduced(acc)
 	return acc
 
+input_numbers = []
+NON_NUMERIC_CHARS = {"[", "]", ","}
 with open("input.txt") as file:
-	input_numbers = [list(line.strip()) for line in file]
+	for line in file:
+		snailfish_number = []
+		for character in line.strip():
+			if character in NON_NUMERIC_CHARS:
+				snailfish_number.append(character)
+			else:
+				snailfish_number.append(int(character))
+		input_numbers.append(snailfish_number)
 
 total_sum = get_total_sum(input_numbers)
 sums_of_two = [add_sfns(a,b) for a in input_numbers for b in input_numbers]
-reduced_sums_of_two = [reduced(sfn_sum) for sfn_sum in sums_of_two]
-magnitudes = [get_magnitude("".join(sfn_sum)) for sfn_sum in reduced_sums_of_two]
+reduced_sums = [reduced(sfn_sum) for sfn_sum in sums_of_two]
+magnitudes = [get_magnitude("".join(str(char) for char in sfn_sum)) for sfn_sum in reduced_sums]
 
-print(f"Part 1: {get_magnitude(''.join(total_sum))}")
+print(f"Part 1: {get_magnitude(''.join(str(char) for char in total_sum))}")
 print(f"Part 2: {max(magnitudes)}")
 
 ###
