@@ -1,5 +1,6 @@
 import time
 from functools import cache
+from itertools import chain
 
 begin = time.time()
 
@@ -33,20 +34,19 @@ def finished_rooms(room_size: int) -> str:
 	return "".join(char*room_size for char in "ABCD")
 
 @cache
-def free_hallway_spots(ridx: int, room_size: int, h: str):
+def free_hallway_spots(ridx: int, room_size: int, h: str) -> list:
+	result = []
 	exit_idx = EXIT_INDIZES[ridx // room_size]
-	for i in range(exit_idx,-1,-1):
-		if h[i] == ".":
-			yield i
-			continue
-		if str(h[i]) in "ABCD":
-			break
-	for i in range(exit_idx,len(h)):
-		if h[i] == ".":
-			yield i
-			continue
-		if str(h[i]) in "ABCD":
-			break
+	left_of_exit = range(exit_idx,-1,-1)
+	right_of_exit = range(exit_idx,len(h))
+	for positions in (left_of_exit, right_of_exit):
+		for p_idx in positions:
+			if h[p_idx] == ".":
+				result.append(p_idx)
+				continue
+			if str(h[p_idx]) in "ABCD":
+				break
+	return result
 
 @cache
 def cost_fn(ridx: int, room_size: int, hidx: int, animal: str) -> int:
@@ -54,7 +54,9 @@ def cost_fn(ridx: int, room_size: int, hidx: int, animal: str) -> int:
 	hallway_dist = abs(EXIT_INDIZES[ridx // room_size] - hidx)
 	return (way_out + hallway_dist) * ENERGY_PER_STEP[animal]
 
-def movable_animals(r: str):
+@cache
+def movable_animals(r: str) -> list:
+	result = []
 	room_size = len(r) // 4
 	for ridx, animal in enumerate(r):
 		if ridx % room_size == 0:
@@ -68,8 +70,9 @@ def movable_animals(r: str):
 			continue
 		if animal == ".":
 			continue
-		yield ridx, animal
+		result.append((ridx, animal))
 		skip_room = True
+	return result
 
 @cache
 def possible_moves(r: str, h: str) -> list:
