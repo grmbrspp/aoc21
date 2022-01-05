@@ -1,6 +1,5 @@
 import time
 from functools import cache
-from itertools import chain
 
 begin = time.time()
 
