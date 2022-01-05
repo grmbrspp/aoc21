@@ -1,76 +1,62 @@
 import time
+import heapq
 from functools import cache
 
 begin = time.time()
 
 ###
 
-HALLWAY = "..0.1.2.3.."
-EXIT_INDIZES = [2,4,6,8]
+HALLWAY = "..!.!.!.!.."
+EXIT_INDIZES = {char: 2 + 2*idx for idx, char in enumerate("ABCD")}
 HOMES = [
 	{
-		"A": [1,0],
-		"B": [3,2],
-		"C": [5,4],
-		"D": [7,6],
+		char: [2*(idx+1) - (n+1) for n in range(2)]
+		for idx, char in enumerate("ABCD")
 	},
 	{
-		"A": [3,2,1,0],
-		"B": [7,6,5,4],
-		"C": [11,10,9,8],
-		"D": [15,14,13,12],
+		char: [4*(idx+1) - (n+1) for n in range(4)]
+		for idx, char in enumerate("ABCD")
 	}
 ]
-ENERGY_PER_STEP = {
-	"A": 1,
-	"B": 10,
-	"C": 100,
-	"D": 1000
-}
+FINISHED_ROOMS = [
+	"".join(char*2 for char in "ABCD"),
+	"".join(char*4 for char in "ABCD"),
+]
+ENERGY_PER_STEP = {char: 10**idx for idx, char in enumerate("ABCD")}
+
 
 @cache
-def finished_rooms(room_size: int) -> str:
-	return "".join(char*room_size for char in "ABCD")
+def cost_fn(ridx: int, room_size: int, hidx: int, cost_per_step: int) -> int:
+	way_out = ridx % room_size + 1
+	hallway_dist = abs(2 + 2*ridx // room_size - hidx)
+	return (way_out + hallway_dist) * cost_per_step
 
-@cache
-def free_hallway_spots(ridx: int, room_size: int, h: str) -> list:
-	result = []
-	exit_idx = EXIT_INDIZES[ridx // room_size]
+def free_hallway_spots(ridx: int, room_size: int, h: str):
+	exit_idx = 2 + 2*ridx // room_size
 	left_of_exit = range(exit_idx,-1,-1)
 	right_of_exit = range(exit_idx,len(h))
 	for positions in (left_of_exit, right_of_exit):
 		for p_idx in positions:
 			if h[p_idx] == ".":
-				result.append(p_idx)
+				yield p_idx
 				continue
-			if str(h[p_idx]) in "ABCD":
+			if h[p_idx] in "ABCD":
 				break
-	return result
-
-@cache
-def cost_fn(ridx: int, room_size: int, hidx: int, animal: str) -> int:
-	way_out = ridx % room_size + 1
-	hallway_dist = abs(EXIT_INDIZES[ridx // room_size] - hidx)
-	return (way_out + hallway_dist) * ENERGY_PER_STEP[animal]
 
 @cache
 def movable_animals(r: str) -> list:
 	result = []
 	room_size = len(r) // 4
-	for ridx, animal in enumerate(r):
-		if ridx % room_size == 0:
-			skip_room = False
-			room = r[ridx:ridx + room_size]
-			others_in_room = [char for char in room
-								if char not in [finished_rooms(room_size)[ridx], "."]]
-			if not others_in_room:
-				skip_room = True
-		if skip_room:
+	rooms = [r[i*room_size:i*room_size+room_size] for i in range(4)]
+	for r_num, room in enumerate(rooms):
+		if all(char in "ABCD"[r_num] + "." for char in room):
 			continue
-		if animal == ".":
-			continue
-		result.append((ridx, animal))
-		skip_room = True
+		for idx, animal in enumerate(room):
+			if animal == ".":
+				continue
+			ridx = idx + r_num*room_size
+			result.append((ridx, animal))
+			break
 	return result
 
 @cache
@@ -80,7 +66,7 @@ def possible_moves(r: str, h: str) -> list:
 	for hidx, animal in enumerate(h):
 		if animal not in "ABCD":
 			continue
-		exit_idx = EXIT_INDIZES[HOMES[room_size == 4][animal][0] // room_size]
+		exit_idx = EXIT_INDIZES[animal]
 		way = h[hidx+1:exit_idx] if exit_idx > hidx else h[exit_idx:hidx]
 		if any(char in way for char in "ABCD"):
 			continue
@@ -90,45 +76,48 @@ def possible_moves(r: str, h: str) -> list:
 			if r[ridx] == ".":
 				new_r = "".join(char if idx != ridx else animal for idx, char in enumerate(r))
 				new_h = "".join(char if idx != hidx else "." for idx, char in enumerate(h))
-				return [(new_r, new_h, cost_fn(ridx, room_size, hidx, animal))]
+				cost_per_step = ENERGY_PER_STEP[animal]
+				return [(new_r, new_h, cost_fn(ridx, room_size, hidx, cost_per_step))]
 			break
 	# MOVE TO HALLWAY
 	result = []
 	for ridx, animal in movable_animals(r):
+		cost_per_step = ENERGY_PER_STEP[animal]
 		for hidx in free_hallway_spots(ridx, room_size, h):
 			new_r = "".join(char if idx != ridx else "." for idx, char in enumerate(r))
 			new_h = "".join(char if idx != hidx else animal for idx, char in enumerate(h))
-			result.append((new_r, new_h, cost_fn(ridx, room_size, hidx, animal)))
+			result.append((new_r, new_h, cost_fn(ridx, room_size, hidx, cost_per_step)))
 	return result
 
-@cache
-def find_lowest_cost(r: str, h: str, cost: int, best=float("inf")) -> int:
-	if cost > best:
-		return cost
-	if r == finished_rooms(len(r) // 4):
-		return cost
-	for move in possible_moves(r,h):
-		this_cost = cost + find_lowest_cost(*move, best)
-		if this_cost < best:
-			best = this_cost
-	return best
+def dijkstra_shortest_path(start_rooms: str, finish: str) -> int:
+	queue = []
+	heapq.heappush(queue, (0, (start_rooms, HALLWAY)))
+	visited = set()
+	while queue:
+		cost, state = heapq.heappop(queue)
+		if state in visited:
+			continue
+		if state[0] == finish:
+			return cost
+		visited.add(state)
+		for r, h, move_cost in possible_moves(*state):
+			if (r,h) in visited:
+				continue
+			heapq.heappush(queue, (cost+move_cost, (r, h)))
+	return float("inf")
 
 
 with open("input.txt") as file:
 	chars = [char for char in file.read() if char in "ABCD"]
 
-p1_rooms = chars[0] + chars[12] +\
-			chars[1] + chars[13] +\
-			chars[2] + chars[14] +\
-			chars[3] + chars[15]
+p1_rooms = "".join(chars[0+i] + chars[12+i] for i in range(4))
+p2_rooms = "".join(
+	"".join(chars[(0+i+(j*4))] for j in range(4))
+	for i in range(4)
+)
 
-p2_rooms = chars[0] + chars[4] + chars[8] + chars[12] +\
-			chars[1] + chars[5] + chars[9] + chars[13] +\
-			chars[2] + chars[6] + chars[10] + chars[14] +\
-			chars[3] + chars[7] + chars[11] + chars[15]
-
-print(f"Part 1: {find_lowest_cost(p1_rooms, HALLWAY, 0)}")
-print(f"Part 2: {find_lowest_cost(p2_rooms, HALLWAY, 0)}")
+print(f"Part 1: {dijkstra_shortest_path(p1_rooms, FINISHED_ROOMS[0])}")
+print(f"Part 2: {dijkstra_shortest_path(p2_rooms, FINISHED_ROOMS[1])}")
 
 ###
 
